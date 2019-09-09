@@ -23,6 +23,8 @@
 # [http]
 #         postBuffer = 157286400
 
+
+
 ##########################
 #         COLORS         #
 ##########################
@@ -137,6 +139,9 @@ alias xbind="xev | awk -F'[ )]+' '/^KeyPress/ { a[NR+2] } NR in a { printf \"%-3
 alias pip_update_outdated_user='pip list --outdated --format=freeze | grep -v "^\-e" | cut -d = -f 1  | xargs -n1 pip install -U --user'
 alias pip_update_outdated='pip list --outdated --format=freeze | grep -v "^\-e" | cut -d = -f 1  | xargs -n1 pip install -U'
 
+## DOCKER
+alias docker_mount_home='docker run -it --rm --name ubuntu_root -v /home:/hostdata ubuntu bash'
+
 
 
 #####################################
@@ -198,10 +203,50 @@ alias git_enable_ssl_global='git config --global http.sslVerify true'
 alias git_disable_ssl_local='git config --local http.sslVerify false'
 alias git_disable_ssl_global='git config --global http.sslVerify false'
 
+function git_move_changes_new_branch {
+    # Transfer current unsaved changes to new branch
+    # Usage: (user@host) - (/my/project/path) [refactor] $ git_move_changes_new_branch newbranch
+
+    usage="Usage: git_move_changes_new_branch new_branch_name
+
+When you forget to make changes to new branch, this script will transfer unstaged changes
+from CURRENT branch to the new branch, then resets the original.
+
+positional arguments:
+    new_branch_name             name of the new branch"
+
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "$usage"
+
+    elif [[ -z "$1" ]]; then
+        echo "[ ERROR ] You have to specify new branch name"
+        echo
+        echo "$usage"
+
+    else
+        base_branch=$(git symbolic-ref -q --short HEAD)  # current branch
+        new_branch="$1"
+        # create a new branch for the changes and check it out
+        git checkout -b "$new_branch"
+        # stash the changes until we revert "$base_branch"
+        git stash
+        # go back to "$base_branch"
+        git checkout "$base_branch"
+        # reset to the last commit
+        git reset --hard HEAD
+        # go back to "$new_branch"
+        git checkout "$new_branch"
+        # re-apply the stashed changes and you are good to go
+        git stash apply
+        # delete stash
+        git stash drop
+    fi
+}
+
 # Show list of project within public github repository of selected user
-function ghuserepo() {
+function ghlist() {
     GHUSER=SonGokussj4
-    curl -s "https://api.github.com/users/$GHUSER/repos?per_page=100" | grep -o 'git@[^"]*'
+    curl -s "https://api.github.com/users/$GHUSER/repos?per_page=100" | grep --color=never -o 'git@[^"]*'
 }
 
 function git-fatfiles() {
@@ -463,7 +508,14 @@ function gitea_list_repo() {
   ###
   ### Gitea api command for listing directories
   ###
-  curl -sX GET "${server}/api/v1/repos/search" -H "accept: application/json" \
+  if [[ ! -z "$1" ]]; then
+    find_user="${1}"
+    echo "find_user1: $find_user"
+  else
+    find_user="${USER}"
+    echo "find_user2: $find_user"
+  fi
+  curl -sX GET "${server}/api/v1/users/${find_user}/repos" -H "accept: application/json" \
     | python3 -m json.tool \
     | grep html_url \
     | sed -e 's#[ ",]##g' \
@@ -479,7 +531,7 @@ function gitea_connect_here() {
   local BG='\e[1;32m'
   local RC='\e[0m'
   echo "Available repositories: "
-  gitea_list_repo
+  gitea_list_repo "${USER}"
   echo
   read -rp "Full address of repository: " repoaddress
   if [ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" == "true" ]; then
@@ -532,10 +584,6 @@ function gitea_remote_all() {
   echo
   git remote show "all"
 }
-
-#############################
-#         GITEA END         #
-#############################
 
 
 
