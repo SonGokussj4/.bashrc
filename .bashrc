@@ -9,20 +9,15 @@
 # [user]
 #         name = LastName FirstName
 #         email = email@address.cz
-# [push]
-#         default = simple
 # [color]
 #         ui = true
 # [credential]
 #         helper = cache --timeout=43200
 # [alias]
 #         glog = log --color --graph --date=short --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %Cgreen(%cd) %C(white)%s %C(bold blue)<%an>%Creset' --abbrev-commit --
+#         gloga = log --color --graph --date=short --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %Cgreen(%cd) %C(white)%s %C(bold blue)<%an>%Creset' --all
 #         s = status
 #         unstage = reset HEAD --
-# [log]
-# [http]
-#         postBuffer = 157286400
-
 
 
 ##########################
